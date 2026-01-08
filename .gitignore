@@ -63,7 +63,6 @@ dmypy.json
 *.tmp
 *.bak
 *.log
-*.csv
 
 # OS
 .DS_Store
@@ -71,6 +70,19 @@ Thumbs.db
 .env
 .env.local
 
-# Data files (if you want to exclude generated data)
-# data/*.json
-# data/*.csv
+# ===== PyInstaller 打包 =====
+*.spec
+build/
+dist/
+
+# ===== macOS 应用 =====
+*.app
+*.dmg
+
+# ===== 用户数据目录 =====
+.energy_manager/
+
+# ===== 保留 data 目录结构，但忽略用户数据 =====
+# 保留默认配置文件，忽略用户产生的数据备份
+data/*.bak
+data/*.backup

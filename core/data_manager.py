@@ -1,18 +1,48 @@
 # -*- coding: utf-8 -*-
 """
-数据管理器 - JSON 格式
+数据管理器 - JSON 格式（数据存放在应用内部）
 """
 
 import os
+import sys
 import json
 import uuid
 from datetime import datetime, timedelta
 
 
+def get_app_data_dir():
+    """获取应用数据目录"""
+    if getattr(sys, 'frozen', False):
+        # PyInstaller 打包后：数据存放在 .app/Contents/Data/
+        executable_dir = os.path.dirname(sys.executable)  # Contents/MacOS/
+        contents_dir = os.path.dirname(executable_dir)    # Contents/
+        app_data = os.path.join(contents_dir, 'Data')
+    else:
+        # 开发环境：使用项目下的 data 目录
+        current_file = os.path.abspath(__file__)
+        project_root = os.path.dirname(os.path.dirname(current_file))
+        app_data = os.path.join(project_root, 'data')
+    
+    os.makedirs(app_data, exist_ok=True)
+    return app_data
+
+
 class DataManager:
-    def __init__(self, data_file='data/energy_data.json'):
+    def __init__(self, data_file=None):
+        if data_file is None:
+            data_dir = get_app_data_dir()
+            data_file = os.path.join(data_dir, 'energy_data.json')
+        
         self.data_file = data_file
         self._ensure_data_file()
+        
+        # 配置文件路径
+        self.config_dir = get_app_data_dir()
+        self.categories_file = os.path.join(self.config_dir, 'categories_config.json')
+        self.quadrant_file = os.path.join(self.config_dir, 'quadrant_tasks.json')
+        
+        # 初始化配置文件（如果不存在）
+        self._ensure_config_files()
 
     def _ensure_data_file(self):
         """确保数据文件存在"""
@@ -21,15 +51,30 @@ class DataManager:
             with open(self.data_file, 'w', encoding='utf-8') as f:
                 json.dump({}, f, ensure_ascii=False, indent=2)
 
+    def _ensure_config_files(self):
+        """确保配置文件存在（首次运行自动创建）"""
+        # 1. 确保 categories_config.json 存在
+        if not os.path.exists(self.categories_file):
+            default_categories = {
+                'categories': [
+                    "晚觉", "午觉", "生活日常", "通勤",
+                    "无聊刷视频", "玩游戏", "Token", "吃饭休息",
+                    "健身", "工作", "副业", "思考规划"
+                ]
+            }
+            with open(self.categories_file, 'w', encoding='utf-8') as f:
+                json.dump(default_categories, f, ensure_ascii=False, indent=2)
+        
+        # 2. 确保 quadrant_tasks.json 存在
+        if not os.path.exists(self.quadrant_file):
+            default_tasks = {'tasks': []}
+            with open(self.quadrant_file, 'w', encoding='utf-8') as f:
+                json.dump(default_tasks, f, ensure_ascii=False, indent=2)
+
     # ==================== 精力数据管理 ====================
 
     def save_day_data(self, date_str, data_dict):
-        """保存某天的数据
-
-        Args:
-            date_str: 日期字符串 '2026.01.07' 或 '2024-01-04'
-            data_dict: {'晚觉': 480, '工作': 540, ...}
-        """
+        """保存某天的数据"""
         try:
             with open(self.data_file, 'r', encoding='utf-8') as f:
                 all_data = json.load(f)
@@ -44,11 +89,7 @@ class DataManager:
             return False
 
     def get_day_data(self, date_str):
-        """获取某天的数据
-
-        Returns:
-            dict: {'晚觉': 480, '工作': 540, ...} 或 None
-        """
+        """获取某天的数据"""
         try:
             with open(self.data_file, 'r', encoding='utf-8') as f:
                 all_data = json.load(f)
@@ -91,9 +132,8 @@ class DataManager:
     def load_categories(self):
         """加载分类列表"""
         try:
-            config_file = 'data/categories_config.json'
-            if os.path.exists(config_file):
-                with open(config_file, 'r', encoding='utf-8') as f:
+            if os.path.exists(self.categories_file):
+                with open(self.categories_file, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                     return data.get('categories', self._default_categories())
             return self._default_categories()
@@ -111,8 +151,7 @@ class DataManager:
     def save_categories(self, categories):
         """保存分类配置"""
         try:
-            os.makedirs('data', exist_ok=True)
-            with open('data/categories_config.json', 'w', encoding='utf-8') as f:
+            with open(self.categories_file, 'w', encoding='utf-8') as f:
                 json.dump({'categories': categories}, f, ensure_ascii=False, indent=2)
             return True
         except Exception:
@@ -123,9 +162,8 @@ class DataManager:
     def _load_quadrant_tasks(self):
         """加载四象限任务"""
         try:
-            config_file = 'data/quadrant_tasks.json'
-            if os.path.exists(config_file):
-                with open(config_file, 'r', encoding='utf-8') as f:
+            if os.path.exists(self.quadrant_file):
+                with open(self.quadrant_file, 'r', encoding='utf-8') as f:
                     return json.load(f)
             return {'tasks': []}
         except Exception:
@@ -134,23 +172,14 @@ class DataManager:
     def _save_quadrant_tasks(self, data):
         """保存四象限任务"""
         try:
-            os.makedirs('data', exist_ok=True)
-            with open('data/quadrant_tasks.json', 'w', encoding='utf-8') as f:
+            with open(self.quadrant_file, 'w', encoding='utf-8') as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
             return True
         except Exception:
             return False
 
     def add_task(self, text, quadrant):
-        """添加任务
-
-        Args:
-            text: 任务文本
-            quadrant: 象限 ID ('Q1', 'Q2', 'Q3', 'Q4')
-
-        Returns:
-            task_id 或 None
-        """
+        """添加任务"""
         try:
             data = self._load_quadrant_tasks()
 
@@ -172,20 +201,10 @@ class DataManager:
             return None
 
     def get_tasks(self, quadrant):
-        """获取象限任务
-
-        Args:
-            quadrant: 象限 ID ('Q1', 'Q2', 'Q3', 'Q4')
-
-        Returns:
-            任务列表
-        """
+        """获取象限任务"""
         try:
             data = self._load_quadrant_tasks()
-
-            # 过滤出指定象限的任务
             tasks = [t for t in data['tasks'] if t.get('quadrant') == quadrant]
-
             return tasks
         except Exception:
             return []
