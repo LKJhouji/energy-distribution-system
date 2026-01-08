@@ -25,7 +25,7 @@
       "id": "5b28db70-ae4d-44f8-b200-6e1a47af83b7",
       "text": "111",
       "quadrant": "Q1",
-      "completed": false,
+      "completed": true,
       "created_at": "2026-01-08T01:27:24.780745"
     },
     {

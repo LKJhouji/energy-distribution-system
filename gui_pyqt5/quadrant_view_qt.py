@@ -205,6 +205,10 @@ class QuadrantViewQt(QWidget):
         task_list.customContextMenuRequested.connect(
             lambda pos: self.show_context_menu(pos, quadrant_id, task_list)
         )
+        # 连接单击事件处理完成状态切换
+        task_list.itemClicked.connect(
+            lambda item: self.on_task_clicked(item, quadrant_id)
+        )
         layout.addWidget(task_list, 1)
 
         # 存储引用
@@ -257,11 +261,24 @@ class QuadrantViewQt(QWidget):
             if task.get('completed', False):
                 item.setText(f"✅ {task['text']}")
                 item.setForeground(QColor('#A0AEC0'))
+                font = QFont("Heiti TC", 13)
+                font.setItalic(True)
+                item.setFont(font)
             else:
                 item.setText(f"⬜ {task['text']}")
                 item.setForeground(QColor('#2D3748'))
+                font = QFont("Heiti TC", 13)
+                item.setFont(font)
 
             task_list.addItem(item)
+
+
+    def on_task_clicked(self, item, quadrant_id):
+        """处理任务单击事件 - 切换完成状态"""
+        task_id = item.data(Qt.UserRole)
+        if task_id:
+            self.data_manager.toggle_task_completed(task_id)
+            self.refresh_task_list(quadrant_id)
 
 
     def show_context_menu(self, position, quadrant_id, task_list):
