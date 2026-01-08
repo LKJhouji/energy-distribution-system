@@ -7,8 +7,149 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
                              QLineEdit, QPushButton, QFrame, QListWidget,
                              QListWidgetItem, QMenu, QGridLayout,
                              QSizePolicy, QGraphicsDropShadowEffect, QScrollArea)
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QFont, QColor
+
+
+class TaskItemWidget(QWidget):
+    """自定义任务项组件，包含任务文本和操作按钮"""
+
+    task_clicked = pyqtSignal(str)      # task_id
+    delete_clicked = pyqtSignal(str)    # task_id
+    move_up_clicked = pyqtSignal(str)   # task_id
+    move_down_clicked = pyqtSignal(str) # task_id
+
+    def __init__(self, task_id, task_text, is_completed, color, parent=None):
+        super().__init__(parent)
+        self.task_id = task_id
+        self.task_text = task_text
+        self.is_completed = is_completed
+        self.color = color
+
+        self.init_ui()
+
+    def init_ui(self):
+        """初始化UI"""
+        self.setMinimumHeight(50)
+        self.setStyleSheet("background-color: transparent; border: none;")
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(10, 0, 10, 8)
+        layout.setSpacing(10)
+        layout.setAlignment(Qt.AlignVCenter)
+
+        # 任务文本标签
+        self.task_label = QLabel()
+        self.update_label()
+        self.task_label.setCursor(Qt.PointingHandCursor)
+        self.task_label.setAlignment(Qt.AlignVCenter)
+        layout.addWidget(self.task_label, 1)
+
+        # 上移按钮
+        up_btn = QPushButton("↑")
+        up_btn.setFixedSize(32, 32)
+        up_btn.setFont(QFont("Heiti TC", 14, QFont.Bold))
+        up_btn.setCursor(Qt.PointingHandCursor)
+        up_btn.setToolTip("上移")
+        up_btn.clicked.connect(lambda: self.move_up_clicked.emit(self.task_id))
+        up_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: transparent;
+                color: {self.color};
+                border: none;
+                border-radius: 5px;
+                font-weight: bold;
+            }}
+            QPushButton:hover {{
+                background-color: {self.color};
+                color: white;
+                border: none;
+            }}
+            QPushButton:pressed {{
+                padding-top: 1px;
+            }}
+        """)
+        layout.addWidget(up_btn)
+
+        # 下移按钮
+        down_btn = QPushButton("↓")
+        down_btn.setFixedSize(32, 32)
+        down_btn.setFont(QFont("Heiti TC", 14, QFont.Bold))
+        down_btn.setCursor(Qt.PointingHandCursor)
+        down_btn.setToolTip("下移")
+        down_btn.clicked.connect(lambda: self.move_down_clicked.emit(self.task_id))
+        down_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: transparent;
+                color: {self.color};
+                border: none;
+                border-radius: 5px;
+                font-weight: bold;
+            }}
+            QPushButton:hover {{
+                background-color: {self.color};
+                color: white;
+                border: none;
+            }}
+            QPushButton:pressed {{
+                padding-top: 1px;
+            }}
+        """)
+        layout.addWidget(down_btn)
+
+        # 删除按钮
+        del_btn = QPushButton("✕")
+        del_btn.setFixedSize(32, 32)
+        del_btn.setFont(QFont("Heiti TC", 14, QFont.Bold))
+        del_btn.setCursor(Qt.PointingHandCursor)
+        del_btn.setToolTip("删除")
+        del_btn.clicked.connect(lambda: self.delete_clicked.emit(self.task_id))
+        del_btn.setStyleSheet("""
+            QPushButton {
+                background-color: transparent;
+                color: #C33;
+                border: none;
+                border-radius: 5px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #C33;
+                color: white;
+                border: none;
+            }
+            QPushButton:pressed {
+                padding-top: 1px;
+            }
+        """)
+        layout.addWidget(del_btn)
+
+        # 连接任务文本点击事件
+        self.task_label.mousePressEvent = self.on_task_text_clicked
+
+    def update_label(self):
+        """更新任务文本标签"""
+        if self.is_completed:
+            text = f"✅ {self.task_text}"
+            color = '#A0AEC0'
+            font = QFont("Heiti TC", 13)
+            font.setItalic(True)
+        else:
+            text = f"⬜ {self.task_text}"
+            color = self.color
+            font = QFont("Heiti TC", 13)
+
+        self.task_label.setText(text)
+        self.task_label.setFont(font)
+        self.task_label.setStyleSheet(f"color: {color}; background-color: transparent; border: none;")
+
+    def on_task_text_clicked(self, event):
+        """处理任务文本点击事件"""
+        self.task_clicked.emit(self.task_id)
+
+    def set_completed(self, is_completed):
+        """更新完成状态"""
+        self.is_completed = is_completed
+        self.update_label()
+
 
 
 class QuadrantViewQt(QWidget):
@@ -175,40 +316,30 @@ class QuadrantViewQt(QWidget):
 
         # 任务列表
         task_list = QListWidget()
-        task_list.setMinimumHeight(150)
+        task_list.setMinimumHeight(200)
         task_list.setStyleSheet(f"""
             QListWidget {{
                 background-color: #FAFBFC;
                 border: 1px solid #E2E8F0;
                 border-radius: 12px;
-                padding: 10px;
+                padding: 12px;
                 outline: none;
             }}
             QListWidget::item {{
-                padding: 14px 14px;
-                margin: 5px 3px;
-                background-color: white;
-                border: 1px solid #E8E8E8;
-                border-radius: 10px;
-                font-size: 14px;
+                padding: 4px 0px;
+                margin: 5px 0px;
+                background-color: transparent;
+                border: none;
             }}
             QListWidget::item:selected {{
-                background-color: white;
-                border: 1px solid #E8E8E8;
+                background-color: transparent;
+                border: none;
             }}
             QListWidget::item:hover {{
-                background-color: #F5F8FA;
-                border: 1px solid #D0D7DE;
+                background-color: transparent;
+                border: none;
             }}
         """)
-        task_list.setContextMenuPolicy(Qt.CustomContextMenu)
-        task_list.customContextMenuRequested.connect(
-            lambda pos: self.show_context_menu(pos, quadrant_id, task_list)
-        )
-        # 连接单击事件处理完成状态切换
-        task_list.itemClicked.connect(
-            lambda item: self.on_task_clicked(item, quadrant_id)
-        )
         layout.addWidget(task_list, 1)
 
         # 存储引用
@@ -259,30 +390,85 @@ class QuadrantViewQt(QWidget):
         color = quadrant_info.get('color', '#667EEA')
 
         for task in tasks:
-            item = QListWidgetItem()
+            # 创建自定义任务项组件
+            task_widget = TaskItemWidget(
+                task['id'],
+                task['text'],
+                task.get('completed', False),
+                color
+            )
+
+            # 连接信号
+            task_widget.task_clicked.connect(
+                lambda task_id: self.on_task_completed_toggled(task_id, quadrant_id)
+            )
+            task_widget.delete_clicked.connect(
+                lambda task_id: self.on_task_deleted(task_id, quadrant_id)
+            )
+            task_widget.move_up_clicked.connect(
+                lambda task_id: self.on_task_moved_up(task_id, quadrant_id)
+            )
+            task_widget.move_down_clicked.connect(
+                lambda task_id: self.on_task_moved_down(task_id, quadrant_id)
+            )
+
+            # 创建列表项并设置自定义组件
+            item = QListWidgetItem(task_list)
             item.setData(Qt.UserRole, task['id'])
-
-            if task.get('completed', False):
-                item.setText(f"✅ {task['text']}")
-                item.setForeground(QColor('#A0AEC0'))
-                font = QFont("Heiti TC", 13)
-                font.setItalic(True)
-                item.setFont(font)
-            else:
-                item.setText(f"⬜ {task['text']}")
-                item.setForeground(QColor(color))
-                font = QFont("Heiti TC", 13)
-                item.setFont(font)
-
-            task_list.addItem(item)
+            item.setSizeHint(task_widget.sizeHint())
+            task_list.setItemWidget(item, task_widget)
 
 
-    def on_task_clicked(self, item, quadrant_id):
-        """处理任务单击事件 - 切换完成状态"""
-        task_id = item.data(Qt.UserRole)
-        if task_id:
-            self.data_manager.toggle_task_completed(task_id)
+    def on_task_completed_toggled(self, task_id, quadrant_id):
+        """处理任务完成状态切换"""
+        self.data_manager.toggle_task_completed(task_id)
+        self.refresh_task_list(quadrant_id)
+
+    def on_task_deleted(self, task_id, quadrant_id):
+        """处理任务删除"""
+        self.data_manager.delete_task(task_id)
+        self.refresh_task_list(quadrant_id)
+
+    def on_task_moved_up(self, task_id, quadrant_id):
+        """处理任务上移"""
+        tasks = self.data_manager.get_tasks(quadrant_id)
+        current_index = next((i for i, t in enumerate(tasks) if t['id'] == task_id), None)
+
+        if current_index is not None and current_index > 0:
+            # 交换位置
+            tasks[current_index], tasks[current_index - 1] = tasks[current_index - 1], tasks[current_index]
+
+            # 保存重新排序后的任务列表
+            data = self.data_manager._load_quadrant_tasks()
+            quadrant_task_indices = [i for i, t in enumerate(data['tasks']) if t.get('quadrant') == quadrant_id]
+
+            for new_idx, task in enumerate(tasks):
+                old_idx = quadrant_task_indices[new_idx]
+                data['tasks'][old_idx] = task
+
+            self.data_manager._save_quadrant_tasks(data)
             self.refresh_task_list(quadrant_id)
+
+    def on_task_moved_down(self, task_id, quadrant_id):
+        """处理任务下移"""
+        tasks = self.data_manager.get_tasks(quadrant_id)
+        current_index = next((i for i, t in enumerate(tasks) if t['id'] == task_id), None)
+
+        if current_index is not None and current_index < len(tasks) - 1:
+            # 交换位置
+            tasks[current_index], tasks[current_index + 1] = tasks[current_index + 1], tasks[current_index]
+
+            # 保存重新排序后的任务列表
+            data = self.data_manager._load_quadrant_tasks()
+            quadrant_task_indices = [i for i, t in enumerate(data['tasks']) if t.get('quadrant') == quadrant_id]
+
+            for new_idx, task in enumerate(tasks):
+                old_idx = quadrant_task_indices[new_idx]
+                data['tasks'][old_idx] = task
+
+            self.data_manager._save_quadrant_tasks(data)
+            self.refresh_task_list(quadrant_id)
+
 
 
     def show_context_menu(self, position, quadrant_id, task_list):
