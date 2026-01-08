@@ -254,6 +254,10 @@ class QuadrantViewQt(QWidget):
 
         tasks = self.data_manager.get_tasks(quadrant_id)
 
+        # 获取象限颜色信息
+        quadrant_info = self.quadrants.get(quadrant_id, {})
+        color = quadrant_info.get('color', '#667EEA')
+
         for task in tasks:
             item = QListWidgetItem()
             item.setData(Qt.UserRole, task['id'])
@@ -266,7 +270,7 @@ class QuadrantViewQt(QWidget):
                 item.setFont(font)
             else:
                 item.setText(f"⬜ {task['text']}")
-                item.setForeground(QColor('#2D3748'))
+                item.setForeground(QColor(color))
                 font = QFont("Heiti TC", 13)
                 item.setFont(font)
 
