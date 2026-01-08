@@ -59,33 +59,6 @@ class QuadrantViewQt(QWidget):
         content_layout.setSpacing(20)
         content_layout.setContentsMargins(24, 24, 24, 24)
 
-        # 标题栏
-        title_frame = QFrame()
-        title_frame.setStyleSheet("""
-            QFrame { 
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                                            stop:0 #667EEA, stop:1 #764BA2);
-                border-radius: 16px; 
-            }
-        """)
-        self.add_shadow(title_frame, blur=20, offset=4, color=QColor(102, 126, 234, 80))
-
-        title_layout = QHBoxLayout(title_frame)
-        title_layout.setContentsMargins(28, 18, 28, 18)
-
-        title = QLabel("📋 四象限任务管理")
-        title.setFont(QFont("Heiti TC", 20, QFont.Bold))
-        title.setStyleSheet("color: white; border: none;")
-        title_layout.addWidget(title)
-
-        title_layout.addStretch()
-
-        info = QLabel("💡 右键点击任务可进行操作")
-        info.setStyleSheet("color: rgba(255,255,255,0.85); font-size: 13px; border: none;")
-        title_layout.addWidget(info)
-
-        content_layout.addWidget(title_frame)
-
         # 四象限网格布局 - 2x2
         grid = QGridLayout()
         grid.setSpacing(20)
