@@ -40,8 +40,7 @@ class DataManager:
                 json.dump(all_data, f, ensure_ascii=False, indent=2)
 
             return True
-        except Exception as e:
-            print(f"保存数据出错: {e}")
+        except Exception:
             return False
 
     def get_day_data(self, date_str):
@@ -55,8 +54,7 @@ class DataManager:
                 all_data = json.load(f)
 
             return all_data.get(date_str, None)
-        except Exception as e:
-            print(f"读取数据出错: {e}")
+        except Exception:
             return None
 
     def delete_day_data(self, date_str):
@@ -72,8 +70,7 @@ class DataManager:
                 json.dump(all_data, f, ensure_ascii=False, indent=2)
 
             return True
-        except Exception as e:
-            print(f"删除数据出错: {e}")
+        except Exception:
             return False
 
     def get_date_range_data(self, start_date, end_date):
@@ -86,8 +83,7 @@ class DataManager:
             for date_key in all_data:
                 result[date_key] = all_data[date_key]
             return result
-        except Exception as e:
-            print(f"读取数据出错: {e}")
+        except Exception:
             return {}
 
     # ==================== 分类管理 ====================
@@ -119,8 +115,7 @@ class DataManager:
             with open('data/categories_config.json', 'w', encoding='utf-8') as f:
                 json.dump({'categories': categories}, f, ensure_ascii=False, indent=2)
             return True
-        except Exception as e:
-            print(f"保存分类出错: {e}")
+        except Exception:
             return False
 
     # ==================== 四象限任务管理 ====================
@@ -133,8 +128,7 @@ class DataManager:
                 with open(config_file, 'r', encoding='utf-8') as f:
                     return json.load(f)
             return {'tasks': []}
-        except Exception as e:
-            print(f"加载任务出错: {e}")
+        except Exception:
             return {'tasks': []}
 
     def _save_quadrant_tasks(self, data):
@@ -144,8 +138,7 @@ class DataManager:
             with open('data/quadrant_tasks.json', 'w', encoding='utf-8') as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
             return True
-        except Exception as e:
-            print(f"保存任务出错: {e}")
+        except Exception:
             return False
 
     def add_task(self, text, quadrant):
@@ -171,16 +164,11 @@ class DataManager:
                 'created_at': datetime.now().isoformat()
             }
 
-            print(f"[DataManager] 添加任务: {task}")
             data['tasks'].append(task)
             self._save_quadrant_tasks(data)
 
-            print(f"[DataManager] 任务已保存，ID: {task_id}")
             return task_id
-        except Exception as e:
-            print(f"添加任务出错: {e}")
-            import traceback
-            traceback.print_exc()
+        except Exception:
             return None
 
     def get_tasks(self, quadrant):
@@ -198,10 +186,8 @@ class DataManager:
             # 过滤出指定象限的任务
             tasks = [t for t in data['tasks'] if t.get('quadrant') == quadrant]
 
-            print(f"[DataManager] get_tasks({quadrant}) 返回 {len(tasks)} 个任务")
             return tasks
-        except Exception as e:
-            print(f"[DataManager] get_tasks 出错: {e}")
+        except Exception:
             return []
 
     def delete_task(self, task_id):
@@ -210,10 +196,8 @@ class DataManager:
             data = self._load_quadrant_tasks()
             data['tasks'] = [t for t in data['tasks'] if t['id'] != task_id]
             self._save_quadrant_tasks(data)
-            print(f"[DataManager] 任务已删除: {task_id}")
             return True
-        except Exception as e:
-            print(f"删除任务出错: {e}")
+        except Exception:
             return False
 
     def move_task(self, task_id, new_quadrant):
@@ -223,12 +207,10 @@ class DataManager:
             for task in data['tasks']:
                 if task['id'] == task_id:
                     task['quadrant'] = new_quadrant
-                    print(f"[DataManager] 任务已移动: {task_id} -> {new_quadrant}")
                     break
             self._save_quadrant_tasks(data)
             return True
-        except Exception as e:
-            print(f"移动任务出错: {e}")
+        except Exception:
             return False
 
     def toggle_task_completed(self, task_id):
@@ -239,11 +221,9 @@ class DataManager:
             for task in data['tasks']:
                 if task['id'] == task_id:
                     task['completed'] = not task.get('completed', False)
-                    print(f"[DataManager] 任务状态切换: {task_id} -> completed={task['completed']}")
                     break
 
             self._save_quadrant_tasks(data)
             return True
-        except Exception as e:
-            print(f"切换任务状态出错: {e}")
+        except Exception:
             return False
