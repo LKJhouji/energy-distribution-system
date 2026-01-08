@@ -30,10 +30,10 @@ class TaskItemWidget(QWidget):
 
     def init_ui(self):
         """初始化UI"""
-        self.setMinimumHeight(50)
+        self.setMinimumHeight(40)
         self.setStyleSheet("background-color: transparent; border: none;")
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(10, 0, 10, 8)
+        layout.setContentsMargins(10, 0, 10, 0)
         layout.setSpacing(10)
         layout.setAlignment(Qt.AlignVCenter)
 
@@ -103,22 +103,22 @@ class TaskItemWidget(QWidget):
         del_btn.setCursor(Qt.PointingHandCursor)
         del_btn.setToolTip("删除")
         del_btn.clicked.connect(lambda: self.delete_clicked.emit(self.task_id))
-        del_btn.setStyleSheet("""
-            QPushButton {
+        del_btn.setStyleSheet(f"""
+            QPushButton {{
                 background-color: transparent;
-                color: #C33;
+                color: {self.color};
                 border: none;
                 border-radius: 5px;
                 font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #C33;
+            }}
+            QPushButton:hover {{
+                background-color: {self.color};
                 color: white;
                 border: none;
-            }
-            QPushButton:pressed {
+            }}
+            QPushButton:pressed {{
                 padding-top: 1px;
-            }
+            }}
         """)
         layout.addWidget(del_btn)
 
@@ -322,12 +322,12 @@ class QuadrantViewQt(QWidget):
                 background-color: #FAFBFC;
                 border: 1px solid #E2E8F0;
                 border-radius: 12px;
-                padding: 12px;
+                padding: 0px 12px 12px 4px;
                 outline: none;
             }}
             QListWidget::item {{
                 padding: 4px 0px;
-                margin: 5px 0px;
+                margin: 0px 0px;
                 background-color: transparent;
                 border: none;
             }}
@@ -338,6 +338,50 @@ class QuadrantViewQt(QWidget):
             QListWidget::item:hover {{
                 background-color: transparent;
                 border: none;
+            }}
+
+            /* 复选框样式 */
+            QListWidget::indicator {{
+                width: 18px;
+                height: 18px;
+            }}
+            QListWidget::indicator:unchecked {{
+                border: 2px solid {color};
+                border-radius: 3px;
+                background-color: white;
+            }}
+            QListWidget::indicator:checked {{
+                border: 2px solid {color};
+                border-radius: 3px;
+                background-color: {color};
+            }}
+
+            /* 滚动条 - 主题渐变色 */
+            QScrollBar:vertical {{
+                background-color: #F0F4F8;
+                width: 10px;
+                border-radius: 5px;
+                margin: 4px 2px 4px 2px;
+            }}
+
+            QScrollBar::handle:vertical {{
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                            stop:0 {color}, stop:1 {self.darken_color(color)});
+                border-radius: 5px;
+                min-height: 40px;
+            }}
+
+            QScrollBar::handle:vertical:hover {{
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                            stop:0 {self.darken_color(color)}, stop:1 {color});
+            }}
+
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
+                height: 0px;
+            }}
+
+            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {{
+                background: none;
             }}
         """)
         layout.addWidget(task_list, 1)

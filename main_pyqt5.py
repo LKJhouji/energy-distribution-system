@@ -194,21 +194,35 @@ def main():
     # 启用高DPI支持
     QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
     QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
-    
+
     app = QApplication(sys.argv)
     app.setStyleSheet(LIGHT_STYLE)
-    
-    # 设置全局字体 - 仅使用 macOS 字体
-    font_candidates = ["Heiti TC", "PingFang SC", "STHeiti", "Hiragino Sans GB"]
-    
+
+    # 设置全局字体 - 根据平台选择
+    import platform
+    system = platform.system()
+
+    if system == "Windows":
+        # Windows 平台字体
+        font_candidates = ["Microsoft YaHei UI", "Microsoft YaHei", "SimHei", "SimSun"]
+    elif system == "Darwin":
+        # macOS 平台字体
+        font_candidates = ["Heiti TC", "PingFang SC", "STHeiti", "Hiragino Sans GB"]
+    else:
+        # Linux 平台字体
+        font_candidates = ["Noto Sans CJK SC", "WenQuanYi Micro Hei", "Droid Sans Fallback"]
+
     for font_name in font_candidates:
         font = QFont(font_name, 11)
         if font.exactMatch():
             app.setFont(font)
             break
     else:
-        # 使用系统默认字体
-        app.setFont(QFont("", 11))
+        # 使用系统默认字体,显式指定family避免MS Sans Serif问题
+        if system == "Windows":
+            app.setFont(QFont("Microsoft YaHei", 11))
+        else:
+            app.setFont(QFont("Sans Serif", 11))
 
     window = MainWindow()
     window.show()
