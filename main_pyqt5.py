@@ -11,7 +11,7 @@ import os
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, current_dir)
 
-from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
+from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QHBoxLayout, QStackedWidget, QPushButton, QMenu,
                              QLabel, QGraphicsDropShadowEffect, QFrame)
 from PyQt5.QtGui import QFont, QColor, QCursor
@@ -34,6 +34,12 @@ class MainWindow(QMainWindow):
         # 初始化管理器
         self.data_manager = DataManager()
         self.chart_generator = ChartGenerator()
+
+        # 缩放相关
+        self.scale_factor = 1.0
+        self.min_scale = 0.7
+        self.max_scale = 1.5
+        self.scale_step = 0.1
 
         # 页面配置
         self.pages = [
@@ -67,6 +73,9 @@ class MainWindow(QMainWindow):
         # 添加到堆栈
         self.stack.addWidget(self.detail_view)
         self.stack.addWidget(self.quadrant_view)
+
+        # 启用鼠标事件
+        self.setFocusPolicy(Qt.StrongFocus)
 
     def create_nav_bar(self):
         """创建顶部导航栏"""
@@ -184,10 +193,46 @@ class MainWindow(QMainWindow):
         self.current_page_index = index
         self.stack.setCurrentIndex(index)
         self.update_nav_button_text()
-        
+
         # 更新菜单选中状态
         for i, action in enumerate(self.nav_menu.actions()):
             action.setChecked(i == index)
+
+    def wheelEvent(self, event):
+        """处理鼠标滚轮事件 - Ctrl+滚轮缩放"""
+        if event.modifiers() == Qt.ControlModifier:
+            # 获取滚轮方向
+            delta = event.angleDelta().y()
+
+            if delta > 0:  # 向上滚动 - 放大
+                new_scale = self.scale_factor + self.scale_step
+            else:  # 向下滚动 - 缩小
+                new_scale = self.scale_factor - self.scale_step
+
+            # 限制缩放范围
+            new_scale = max(self.min_scale, min(self.max_scale, new_scale))
+
+            # 只有当缩放因子改变时才更新
+            if new_scale != self.scale_factor:
+                self.scale_factor = new_scale
+                self.apply_scale()
+
+            event.accept()
+        else:
+            super().wheelEvent(event)
+
+    def apply_scale(self):
+        """应用缩放 - 只调整全局字体大小"""
+        app = QApplication.instance()
+        if app:
+            # 计算新的字体大小
+            base_size = 11  # 原始全局字体大小
+            new_size = max(8, int(base_size * self.scale_factor))
+
+            # 创建新字体并应用到应用
+            font = QFont()
+            font.setPointSize(new_size)
+            app.setFont(font)
 
 
 def main():

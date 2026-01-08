@@ -7,8 +7,13 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
                              QLineEdit, QPushButton, QFrame, QListWidget,
                              QListWidgetItem, QMenu, QGridLayout,
                              QSizePolicy, QGraphicsDropShadowEffect, QScrollArea)
-from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtGui import QFont, QColor
+from PyQt5.QtCore import Qt, pyqtSignal, QMimeData
+from PyQt5.QtGui import QFont, QColor, QDrag
+
+
+
+
+
 
 
 class TaskItemWidget(QWidget):
@@ -18,6 +23,7 @@ class TaskItemWidget(QWidget):
     delete_clicked = pyqtSignal(str)    # task_id
     move_up_clicked = pyqtSignal(str)   # task_id
     move_down_clicked = pyqtSignal(str) # task_id
+    drag_started = pyqtSignal(str)      # task_id - 拖拽启动信号
 
     def __init__(self, task_id, task_text, is_completed, color, parent=None):
         super().__init__(parent)
@@ -25,6 +31,11 @@ class TaskItemWidget(QWidget):
         self.task_text = task_text
         self.is_completed = is_completed
         self.color = color
+
+        # 拖拽相关
+        self.mouse_press_pos = None
+        self.drag_threshold = 5  # 像素阈值
+        self.is_dragging = False  # 是否正在拖拽
 
         self.init_ui()
 
@@ -122,9 +133,6 @@ class TaskItemWidget(QWidget):
         """)
         layout.addWidget(del_btn)
 
-        # 连接任务文本点击事件
-        self.task_label.mousePressEvent = self.on_task_text_clicked
-
     def update_label(self):
         """更新任务文本标签"""
         if self.is_completed:
@@ -141,15 +149,98 @@ class TaskItemWidget(QWidget):
         self.task_label.setFont(font)
         self.task_label.setStyleSheet(f"color: {color}; background-color: transparent; border: none;")
 
-    def on_task_text_clicked(self, event):
-        """处理任务文本点击事件"""
-        self.task_clicked.emit(self.task_id)
-
     def set_completed(self, is_completed):
         """更新完成状态"""
         self.is_completed = is_completed
         self.update_label()
 
+    def mousePressEvent(self, event):
+        """处理鼠标按下事件"""
+        if event.button() == Qt.LeftButton:
+            self.mouse_press_pos = event.pos()
+            self.is_dragging = False  # 重置拖拽标志
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        """处理鼠标移动事件 - 在移动时启动拖拽"""
+        if not (event.buttons() & Qt.LeftButton):
+            return
+
+        if self.mouse_press_pos is None:
+            return
+
+        # 计算移动距离
+        distance = (event.pos() - self.mouse_press_pos).manhattanLength()
+
+        # 只有移动超过阈值才启动拖拽
+        if distance >= self.drag_threshold:
+            self.is_dragging = True
+
+            drag = QDrag(self)
+            mime_data = QMimeData()
+            # 存储task_id到MIME数据
+            mime_data.setText(self.task_id)
+            mime_data.setData("application/x-taskid", self.task_id.encode())
+            drag.setMimeData(mime_data)
+            # 执行拖拽操作
+            drag.exec_(Qt.MoveAction)
+            self.mouse_press_pos = None
+            self.drag_started.emit(self.task_id)
+
+    def mouseReleaseEvent(self, event):
+        """处理鼠标释放事件"""
+        # 如果没有拖拽，则认为是点击
+        if not self.is_dragging and event.button() == Qt.LeftButton:
+            self.task_clicked.emit(self.task_id)
+
+        self.mouse_press_pos = None
+        self.is_dragging = False
+        super().mouseReleaseEvent(event)
+
+
+
+
+class DroppableTaskList(QListWidget):
+    """可接收拖放任务的列表组件"""
+
+    def __init__(self, quadrant_id, parent_view=None, data_manager=None):
+        super().__init__()
+        self.quadrant_id = quadrant_id
+        self.parent_view = parent_view
+        self.data_manager = data_manager
+
+        # 启用拖放
+        self.setAcceptDrops(True)
+        self.setDefaultDropAction(Qt.MoveAction)
+
+    def dragEnterEvent(self, event):
+        """处理拖拽进入事件"""
+        # 验证MIME类型
+        if event.mimeData().hasFormat("application/x-taskid"):
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+
+    def dragMoveEvent(self, event):
+        """处理拖拽移动事件"""
+        if event.mimeData().hasFormat("application/x-taskid"):
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event):
+        """处理拖放完成事件"""
+        if not event.mimeData().hasFormat("application/x-taskid"):
+            event.ignore()
+            return
+
+        # 提取task_id
+        task_id = event.mimeData().text()
+        event.acceptProposedAction()
+
+        # 调用parent_view处理任务移动
+        if self.parent_view:
+            self.parent_view.on_task_dropped(task_id, self.quadrant_id)
 
 
 class QuadrantViewQt(QWidget):
@@ -315,7 +406,7 @@ class QuadrantViewQt(QWidget):
         layout.addLayout(input_layout)
 
         # 任务列表
-        task_list = QListWidget()
+        task_list = DroppableTaskList(quadrant_id, self, self.data_manager)
         task_list.setMinimumHeight(200)
         task_list.setStyleSheet(f"""
             QListWidget {{
@@ -514,6 +605,26 @@ class QuadrantViewQt(QWidget):
             self.refresh_task_list(quadrant_id)
 
 
+
+    def on_task_dropped(self, task_id, target_quadrant_id):
+        """处理任务拖放完成事件"""
+        # 查找源象限（从所有象限中找到该任务）
+        source_quadrant_id = None
+        for qid in self.quadrants.keys():
+            tasks = self.data_manager.get_tasks(qid)
+            if any(t['id'] == task_id for t in tasks):
+                source_quadrant_id = qid
+                break
+
+        # 如果源象限和目标象限相同，则不需要移动
+        if source_quadrant_id == target_quadrant_id:
+            return
+
+        # 移动任务
+        if self.data_manager.move_task(task_id, target_quadrant_id):
+            # 刷新源象限和目标象限
+            self.refresh_task_list(source_quadrant_id)
+            self.refresh_task_list(target_quadrant_id)
 
     def show_context_menu(self, position, quadrant_id, task_list):
         """显示右键菜单"""

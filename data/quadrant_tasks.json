@@ -11,14 +11,14 @@
       "id": "8fef8432-60e9-4aac-aa5d-f875bc2f8b99",
       "text": "小米创业思考",
       "quadrant": "Q2",
-      "completed": false,
+      "completed": true,
       "created_at": "2026-01-08T13:38:16.176052"
     },
     {
       "id": "0b968d4f-ea16-46e4-8966-c19a1079e197",
       "text": "述职报告ppt",
       "quadrant": "Q2",
-      "completed": false,
+      "completed": true,
       "created_at": "2026-01-08T13:40:42.623793"
     },
     {
@@ -39,7 +39,7 @@
       "id": "5885ed0b-8f5f-4547-96ed-ce5809c49872",
       "text": "做一个上线流程清单",
       "quadrant": "Q1",
-      "completed": false,
+      "completed": true,
       "created_at": "2026-01-08T13:43:36.030079"
     },
     {
@@ -52,7 +52,7 @@
     {
       "id": "b9d19c2a-ad7d-4531-a608-783300fbf7e4",
       "text": "1111",
-      "quadrant": "Q1",
+      "quadrant": "Q2",
       "completed": false,
       "created_at": "2026-01-09T00:43:30.398602"
     },
@@ -74,7 +74,7 @@
       "id": "20be437c-361e-4d04-8cea-1697f82aa3b0",
       "text": "1234",
       "quadrant": "Q2",
-      "completed": false,
+      "completed": true,
       "created_at": "2026-01-09T00:54:51.842607"
     },
     {
@@ -137,7 +137,7 @@
       "id": "0eae9024-9a8f-40b0-8400-c0e6c8ed1a9c",
       "text": "test",
       "quadrant": "Q3",
-      "completed": false,
+      "completed": true,
       "created_at": "2026-01-09T00:55:18.241808"
     },
     {
