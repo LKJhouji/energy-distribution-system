@@ -193,8 +193,8 @@ class QuadrantViewQt(QWidget):
                 font-size: 14px;
             }}
             QListWidget::item:selected {{
-                background-color: {bg};
-                border: 2px solid {color};
+                background-color: white;
+                border: 1px solid #E8E8E8;
             }}
             QListWidget::item:hover {{
                 background-color: #F5F8FA;
