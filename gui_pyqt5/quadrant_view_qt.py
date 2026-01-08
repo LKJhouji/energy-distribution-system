@@ -241,17 +241,13 @@ class QuadrantViewQt(QWidget):
         def add_task():
             """添加任务（本地函数）"""
             text = input_field.text().strip()
-            print(f"[DEBUG] 输入内容: '{text}', 象限: {quadrant_id}")
 
             if text:
                 task_id = self.data_manager.add_task(text, quadrant_id)
 
                 if task_id:
-                    print(f"[DEBUG] 任务添加成功，ID: {task_id}")
                     input_field.clear()
                     self.refresh_task_list(quadrant_id)
-                else:
-                    print("[DEBUG] 任务添加失败")
 
         add_btn.clicked.connect(add_task)
         input_field.returnPressed.connect(add_task)
@@ -272,24 +268,16 @@ class QuadrantViewQt(QWidget):
 
     def refresh_task_list(self, quadrant_id):
         """刷新任务列表"""
-        print(f"\n[UI] ====== refresh_task_list({quadrant_id}) ======")
-        print(f"[UI] self.task_lists 内容: {list(self.task_lists.keys())}")
-        
         task_list = self.task_lists.get(quadrant_id)
-        print(f"[UI] task_list = {task_list}")
-        print(f"[UI] task_list is None? {task_list is None}")
-        
-        if task_list is None:  # ✅ 改用 is None 判断
-            print(f"[UI] ❌ 找不到 task_list 组件！")
+
+        if task_list is None:
             return
 
         task_list.clear()
-        
+
         tasks = self.data_manager.get_tasks(quadrant_id)
-        print(f"[UI] 获取到 {len(tasks)} 个任务")
 
         for task in tasks:
-            print(f"[UI] 添加: {task['text']}")
             item = QListWidgetItem()
             item.setData(Qt.UserRole, task['id'])
 
@@ -301,8 +289,6 @@ class QuadrantViewQt(QWidget):
                 item.setForeground(QColor('#2D3748'))
 
             task_list.addItem(item)
-        
-        print(f"[UI] task_list.count() = {task_list.count()}")
 
 
     def show_context_menu(self, position, quadrant_id, task_list):
